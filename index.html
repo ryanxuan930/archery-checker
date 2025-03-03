@@ -2,14 +2,20 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>射箭驗算小工具</title>
+  <!-- 加入 viewport 設定，確保在行動裝置上正確縮放 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>射箭成績驗算器</title>
   <style>
+    /* 所有元素採用 border-box */
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 20px;
     }
-    /* 每輪輸入列：一排 6 個輸入格 + 統計資訊 */
+    /* 每輪輸入列：6個輸入格與統計資訊 */
     .roundRow {
       display: flex;
       align-items: center;
@@ -27,6 +33,14 @@
       font-size: 20px;
       text-align: center;
       cursor: pointer;
+      /* 始終 readonly，避免行動裝置彈出系統鍵盤 */
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    /* 模擬焦點狀態 */
+    .roundInputs input:focus {
+      outline: 2px solid #007BFF;
+      background-color: #fff;
     }
     .roundStats {
       margin-left: 20px;
@@ -40,12 +54,12 @@
       margin-top: 20px;
       font-weight: bold;
     }
-    /* 核取方塊：顯示或隱藏螢幕鍵盤 */
+    /* 核取方塊：切換是否顯示螢幕鍵盤 */
     #keyboardToggleDiv {
       margin: 20px 0;
       font-size: 18px;
     }
-    /* 螢幕鍵盤，3行4列排列，按鈕較大 */
+    /* 螢幕鍵盤：3行4列排列，按鈕較大 */
     #keyboard {
       display: grid;
       grid-template-columns: repeat(4, 80px);
@@ -58,6 +72,7 @@
       width: 80px;
       height: 80px;
       font-size: 24px;
+      cursor: pointer;
     }
     /* 重置按鈕 */
     #resetButton {
@@ -65,10 +80,27 @@
       padding: 10px 20px;
       margin-top: 20px;
     }
+    /* Media Query：針對螢幕較窄裝置（例如 iPad 直式） */
+    @media (max-width: 768px) {
+      .roundInputs input {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+      }
+      #keyboard {
+        grid-template-columns: repeat(4, 70px);
+        grid-template-rows: repeat(3, 70px);
+      }
+      #keyboard button {
+        width: 70px;
+        height: 70px;
+        font-size: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Ryan的射箭驗算小工具</h1>
+  <h1>射箭成績驗算器</h1>
   
   <!-- 每輪輸入與統計容器 -->
   <div id="roundContainer"></div>
@@ -92,13 +124,13 @@
     const totalRounds = 6;           // 共6輪
     const arrowsPerRound = 6;        // 每輪6支箭
     const totalInputs = totalRounds * arrowsPerRound; // 共36格
-    let currentInputIndex = 0;       // 預設順序輸入索引
+    let currentInputIndex = 0;       // 目前選取的輸入格索引
     const inputs = [];               // 儲存所有輸入格
     const roundStatsDivs = [];       // 儲存各輪統計資訊顯示區
 
     const roundContainer = document.getElementById('roundContainer');
     
-    // 建立每一輪：每輪包含6個輸入格與一個統計資訊欄
+    // 建立每一輪：每輪包含6個輸入格與統計資訊欄
     let globalIndex = 0;
     for (let round = 0; round < totalRounds; round++) {
       const roundRow = document.createElement('div');
@@ -110,21 +142,16 @@
       for (let i = 0; i < arrowsPerRound; i++) {
         const input = document.createElement('input');
         input.type = 'text';
+        // 始終設定為 readonly，避免行動裝置自動彈出系統鍵盤
         input.readOnly = true;
         input.tabIndex = globalIndex + 1;
         // 設定索引，方便後續定位
         input.dataset.index = globalIndex;
         
-        // 點擊時解除唯讀以便編輯
+        // 點擊時僅更新目前選取欄位，不移除 readonly
         input.addEventListener('click', function() {
-          this.readOnly = false;
           currentInputIndex = parseInt(this.dataset.index);
           this.focus();
-        });
-        // 離開時恢復唯讀並更新統計
-        input.addEventListener('blur', function() {
-          this.readOnly = true;
-          updateStats();
         });
         
         inputs.push(input);
@@ -143,8 +170,7 @@
       roundRow.appendChild(roundStatsDiv);
       roundContainer.appendChild(roundRow);
     }
-    // 初始設定第一格可編輯並獲取焦點
-    inputs[0].readOnly = false;
+    // 初始設定第一個輸入格聚焦
     inputs[0].focus();
     currentInputIndex = 0;
     
@@ -166,10 +192,9 @@
       keyboardDiv.style.display = this.checked ? 'grid' : 'none';
     });
     
-    // 根據目前聚焦的輸入格輸入分數
+    // 根據目前聚焦的輸入格輸入分數（所有輸入格皆 readonly，因此僅透過程式更新值）
     function inputScore(value) {
       let active = document.activeElement;
-      // 如果目前聚焦的是輸入格
       if (active && active.tagName === 'INPUT' && active.dataset.index !== undefined) {
         let index = parseInt(active.dataset.index);
         let wasEmpty = active.value === "";
@@ -182,13 +207,12 @@
             nextIndex++;
           }
           if (nextIndex < inputs.length) {
-            inputs[nextIndex].readOnly = false;
             inputs[nextIndex].focus();
             currentInputIndex = nextIndex;
           }
         }
       } else {
-        // 若沒有聚焦，則以 currentInputIndex 為目標
+        // 若目前無輸入格聚焦，則以 currentInputIndex 為目標
         if (currentInputIndex < inputs.length) {
           let wasEmpty = inputs[currentInputIndex].value === "";
           inputs[currentInputIndex].value = value;
@@ -196,7 +220,6 @@
           if (wasEmpty) {
             let nextIndex = currentInputIndex + 1;
             if (nextIndex < inputs.length) {
-              inputs[nextIndex].readOnly = false;
               inputs[nextIndex].focus();
               currentInputIndex = nextIndex;
             }
@@ -232,7 +255,6 @@
         }
         let newIndex = newRow * arrowsPerRound + newCol;
         if (newIndex < inputs.length) {
-          inputs[newIndex].readOnly = false;
           inputs[newIndex].focus();
           currentInputIndex = newIndex;
         }
@@ -311,11 +333,9 @@
     function resetAll() {
       inputs.forEach(input => {
         input.value = "";
-        input.readOnly = true;
       });
       currentInputIndex = 0;
       updateStats();
-      inputs[0].readOnly = false;
       inputs[0].focus();
     }
     
@@ -323,7 +343,6 @@
     
     // 頁面載入時自動聚焦第一個輸入格
     window.onload = function() {
-      inputs[0].readOnly = false;
       inputs[0].focus();
     };
   </script>
