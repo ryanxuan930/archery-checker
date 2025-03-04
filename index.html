@@ -33,7 +33,7 @@
       font-size: 20px;
       text-align: center;
       cursor: pointer;
-      /* 始終 readonly，避免行動裝置彈出系統鍵盤 */
+      /* 始終 readonly，避免行動裝置自動彈出系統鍵盤 */
       background-color: #f0f0f0;
       border: 1px solid #ccc;
     }
@@ -59,11 +59,11 @@
       margin: 20px 0;
       font-size: 18px;
     }
-    /* 螢幕鍵盤：3行4列排列，按鈕較大 */
+    /* 螢幕鍵盤：4列3欄排列，按鈕較大 */
     #keyboard {
       display: grid;
-      grid-template-columns: repeat(4, 80px);
-      grid-template-rows: repeat(3, 80px);
+      grid-template-columns: repeat(3, 80px);
+      grid-template-rows: repeat(4, 80px);
       gap: 10px;
       justify-content: center;
       margin-bottom: 20px;
@@ -88,8 +88,8 @@
         font-size: 18px;
       }
       #keyboard {
-        grid-template-columns: repeat(4, 70px);
-        grid-template-rows: repeat(3, 70px);
+        grid-template-columns: repeat(3, 70px);
+        grid-template-rows: repeat(4, 70px);
       }
       #keyboard button {
         width: 70px;
@@ -174,8 +174,8 @@
     inputs[0].focus();
     currentInputIndex = 0;
     
-    // 螢幕鍵盤按鍵：1-10, X, M（3x4排列）
-    const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "X", "M"];
+    // 螢幕鍵盤按鍵：依照新順序排列：X, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, M
+    const keys = ["X", "10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "M"];
     const keyboardDiv = document.getElementById('keyboard');
     
     keys.forEach(key => {
@@ -228,7 +228,7 @@
       }
     }
     
-    // 支援實體鍵盤輸入（包含數字、X、M、方向鍵、R重置）
+    // 支援實體鍵盤輸入（包含數字、X、M、方向鍵、R 重置）
     document.addEventListener('keydown', function(e) {
       const key = e.key;
       
