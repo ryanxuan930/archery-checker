@@ -54,6 +54,26 @@
       margin-top: 20px;
       font-weight: bold;
     }
+    /* 新增：靶號、靶位與 API 設定輸入區 */
+    #targetContainer {
+      margin: 20px 0;
+      font-size: 18px;
+    }
+    #targetContainer input, #targetContainer select {
+      font-size: 18px;
+      padding: 5px;
+      margin: 0 5px;
+    }
+    /* 輸入 Spreadsheet ID 與 API KEY */
+    #sheetSettings {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+    #sheetSettings input {
+      font-size: 18px;
+      padding: 5px;
+      margin: 0 5px;
+    }
     /* 核取方塊：切換是否顯示螢幕鍵盤 */
     #keyboardToggleDiv {
       margin: 20px 0;
@@ -74,11 +94,12 @@
       font-size: 24px;
       cursor: pointer;
     }
-    /* 重置按鈕 */
-    #resetButton {
+    /* 重置與送出按鈕 */
+    #resetButton, #submitButton {
       font-size: 18px;
       padding: 10px 20px;
       margin-top: 20px;
+      margin-right: 10px;
     }
     /* Media Query：針對螢幕較窄裝置（例如 iPad 直式） */
     @media (max-width: 768px) {
@@ -96,6 +117,11 @@
         height: 70px;
         font-size: 20px;
       }
+      #targetContainer input, #targetContainer select, #sheetSettings input {
+        font-size: 16px;
+        padding: 4px;
+        margin: 0 3px;
+      }
     }
   </style>
 </head>
@@ -108,6 +134,22 @@
   <!-- 整體統計資訊 -->
   <div id="overallStats"></div>
   
+  <!-- 靶號、靶位與 API 設定輸入區 -->
+  <div id="targetContainer">
+    靶號：<input type="text" id="targetNumber" placeholder="請輸入靶號" size="4">
+    靶位：<select id="targetPosition">
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+    </select>
+  </div>
+  <!-- 新增：Spreadsheet ID 與 API KEY 輸入 -->
+  <div id="sheetSettings">
+    Spreadsheet ID：<input type="text" id="spreadsheetId" placeholder="請輸入 Spreadsheet ID" size="20">
+    API KEY：<input type="text" id="apiKey" placeholder="請輸入 API KEY" size="20">
+  </div>
+  
   <!-- 核取方塊：切換是否顯示螢幕鍵盤 -->
   <div id="keyboardToggleDiv">
     <input type="checkbox" id="toggleKeyboard" checked>
@@ -117,8 +159,9 @@
   <!-- 螢幕鍵盤 -->
   <div id="keyboard"></div>
   
-  <!-- 重置按鈕 -->
+  <!-- 重置與送出按鈕 -->
   <button id="resetButton">重置</button>
+  <button id="submitButton">送出</button>
   
   <script>
     const totalRounds = 6;           // 共6輪
@@ -228,8 +271,13 @@
       }
     }
     
-    // 支援實體鍵盤輸入（包含數字、X、M、方向鍵、R 重置）
+    // 支援實體鍵盤輸入（包含數字、X、M、+、-、方向鍵、R 重置）
     document.addEventListener('keydown', function(e) {
+      // 若 focus 在靶號輸入框，則不攔截鍵盤事件
+      if (document.activeElement && document.activeElement.id === "targetNumber") {
+        return;
+      }
+      
       const key = e.key;
       
       // 方向鍵控制輸入格移動
@@ -269,12 +317,18 @@
         return;
       }
       
-      // 數字、X 與 M 的輸入支援
+      // 數字、X 與 M 的輸入支援：此外，+ 鍵輸入 X，- 鍵輸入 M
       if (/^[1-9]$/.test(key)) {
         inputScore(key);
         e.preventDefault();
       } else if (key === '0') {
         inputScore("10");
+        e.preventDefault();
+      } else if (key === '+' ) {
+        inputScore("X");
+        e.preventDefault();
+      } else if (key === '-' ) {
+        inputScore("M");
         e.preventDefault();
       } else if (key.toUpperCase() === 'X') {
         inputScore("X");
@@ -340,6 +394,83 @@
     }
     
     document.getElementById('resetButton').addEventListener('click', resetAll);
+    
+    // 送出按鈕：組合靶位資料及成績並使用 Google Sheets API 更新表單
+    document.getElementById('submitButton').addEventListener('click', function() {
+      // 取得靶號與靶位
+      const targetNumber = document.getElementById('targetNumber').value.trim();
+      const targetPosition = document.getElementById('targetPosition').value;
+      if (targetNumber === "") {
+        alert("請輸入靶號");
+        return;
+      }
+      const target = targetNumber + targetPosition; // 例如 "1A"
+      
+      // 取得36個分數
+      const scores = inputs.map(input => input.value.trim());
+      
+      // 取得統計資訊（總分、10+X總數與X總數）
+      let totalScore = 0;
+      let countTenX = 0;
+      let countX = 0;
+      for (let i = 0; i < inputs.length; i++) {
+        const val = inputs[i].value.trim();
+        let score = 0;
+        if (val === "M" || val === "") {
+          score = 0;
+        } else if (val === "X") {
+          score = 10;
+          countTenX++;
+          countX++;
+        } else {
+          score = parseInt(val, 10);
+          if (score === 10) {
+            countTenX++;
+          }
+        }
+        totalScore += isNaN(score) ? 0 : score;
+      }
+      
+      // 組成要傳送的資料陣列：靶位、36格分數、總分、10+X數量、X數量
+      const rowData = [target, ...scores, totalScore, countTenX, countX];
+      
+      // 取得 Spreadsheet ID 與 API KEY，直接由使用者輸入
+      const spreadsheetId = document.getElementById('spreadsheetId').value.trim();
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (spreadsheetId === "" || apiKey === "") {
+        alert("請輸入 Spreadsheet ID 與 API KEY");
+        return;
+      }
+      
+      // Google Sheets API 要求工作表名稱，此處假設為 "Sheet1"
+      const sheetName = "Sheet1";
+      // 組成 API URL (使用 append 模式)，並將 API KEY 加入查詢參數
+      const apiURL = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED&key=${apiKey}`;
+      
+      const payload = {
+        values: [ rowData ]
+      };
+      
+      fetch(apiURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (response.ok) {
+          alert("資料已成功送出到 Google Sheet");
+        } else {
+          alert("送出失敗，請檢查 API KEY 或 Spreadsheet ID");
+          console.error("錯誤代碼：", response.status);
+        }
+      })
+      .catch((error) => {
+        console.error("傳送失敗:", error);
+        alert("資料送出失敗");
+      });
+    });
     
     // 頁面載入時自動聚焦第一個輸入格
     window.onload = function() {
