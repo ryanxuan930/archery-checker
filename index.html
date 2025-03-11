@@ -11,16 +11,19 @@
       box-sizing: border-box;
     }
     body {
-      font-family: Arial, sans-serif;
+      font-family:Arial, sans-serif;
       text-align: center;
       margin: 20px;
+      background-color: aliceblue;
     }
+
     /* 每輪輸入列：6個輸入格與統計資訊 */
     .roundRow {
       display: flex;
+      max-width: 100%;
+      margin-bottom: 10px;
       align-items: center;
       justify-content: center;
-      margin-bottom: 10px;
     }
     .roundInputs {
       display: grid;
@@ -141,13 +144,78 @@
   
   <!-- 螢幕鍵盤 -->
   <div id="keyboard"></div>
-  
+  <div id="information" style="display:grid;grid-template-columns:repeat(4, 1fr); grid-template-rows: repeat(3, auto); gap: 10px">
+    <button id ="反曲弓大專男子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =1>反曲弓大專男子組第一局</button>
+    <button id ="反曲弓大專女子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =2>反曲弓大專女子組第一局</button>
+    <button id ="反曲弓大專男子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =3>反曲弓大專男子組第二局</button>
+    <button id ="反曲弓大專女子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =4>反曲弓大專女子組第二局</button>
+    <button id ="複合弓公開男子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =10>複合弓公開男子組第一局</button>
+    <button id ="複合弓公開女子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =11>複合弓公開女子組第一局</button>
+    <button id ="複合弓公開男子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =12>複合弓公開男子組第二局</button>
+    <button id ="複合弓公開女子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =13>複合弓公開女子組第二局</button>
+    <button id ="反曲弓公開男子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =14>反曲弓公開男子組第一局</button>
+    <button id ="反曲弓公開女子組第一局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =15>反曲弓公開女子組第一局</button>
+    <button id ="反曲弓公開男子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =16>反曲弓公開男子組第二局</button>
+    <button id ="反曲弓公開女子組第二局" style ="font-size:20px;padding:5 10 5 10;border-radius:10;margin-bottom:15px;font-weight:bold;" value =17>反曲弓公開女子組第二局</button>
+  </div>
   <!-- 重置與送出按鈕 -->
   <button id="resetButton">重置</button>
   <button id="submitButton">送出</button>
   
   <script>
     // 使用 Local Storage 儲存 Spreadsheet ID、Sheet Name、靶號與 API URL
+    document.addEventListener('DOMContentLoaded', function() {
+      let globalValue;
+      document.getElementById('information').addEventListener('click', function(event) {
+        if (event.target && event.target.tagName === 'BUTTON') {
+          globalValue = Number(event.target.value);
+          if (globalValue < 10) {
+            document.getElementById('spreadsheetId').value = "10wYAjbPLd8b_2isqg5wdDhnhrFvXfr62CknAfiv6Ifo";
+          } else {
+            document.getElementById('spreadsheetId').value = "1Tkl_s_WmWTN9sqkE-_4LsmC2XHcKrcvbIW7lh04Fksw";
+          }
+        }
+        switch(globalValue){
+          case 1:
+          document.getElementById('sheetName').value = "反曲男子組第一局";
+          break;
+          case 2:
+          document.getElementById('sheetName').value = "反曲女子組第一局";
+          break;
+          case 3:
+          document.getElementById('sheetName').value = "反曲男子組第二局";
+          break;
+          case 4:
+          document.getElementById('sheetName').value = "反曲女子組第二局";
+          break;
+          case 10:
+          document.getElementById('sheetName').value = "複合男子組第一局";
+          break;
+          case 11:
+          document.getElementById('sheetName').value = "複合女子組第一局";
+          break;
+          case 12:
+          document.getElementById('sheetName').value = "複合男子組第二局";
+          break;
+          case 13:
+          document.getElementById('sheetName').value = "複合女子組第二局";
+          break;
+          case 14:
+          document.getElementById('sheetName').value = "反曲男子組第一局";
+          break;
+          case 15:
+          document.getElementById('sheetName').value = "反曲女子組第一局";
+          break;
+          case 16:
+          document.getElementById('sheetName').value = "反曲男子組第二局";
+          break;
+          case 17:
+          document.getElementById('sheetName').value = "反曲女子組第二局";
+          break;
+
+        }
+      });
+    });
     function loadSettings() {
       const savedSpreadsheetId = localStorage.getItem('spreadsheetId');
       const savedSheetName = localStorage.getItem('sheetName');
@@ -178,13 +246,14 @@
       localStorage.setItem('apiURL', apiURL);
     }
     
+
     document.getElementById('spreadsheetId').addEventListener('blur', saveSettings);
     document.getElementById('sheetName').addEventListener('blur', saveSettings);
     document.getElementById('targetNumber').addEventListener('blur', saveSettings);
     document.getElementById('apiURL').addEventListener('blur', saveSettings);
     
     loadSettings();
-    
+    let totalkey = 0
     const totalRounds = 6;
     const arrowsPerRound = 6;
     const totalInputs = totalRounds * arrowsPerRound;
@@ -470,6 +539,7 @@
       .then(result => {
         if (result.result === "Success") {
           alert("資料已成功送出到 Google Sheet");
+          totalkey++;
           resetAll();
         } else {
           alert("送出失敗：" + result.error);
@@ -484,6 +554,8 @@
     window.onload = function() {
       inputs[0].focus();
     };
+
+
   </script>
 </body>
 </html>
